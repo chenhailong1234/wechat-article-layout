@@ -1,0 +1,26 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+
+# Generated article and publishing data
+wechat-batch-*/
+article*.html
+publish-results*.json
+screenshots/
+output/
+dist/
+build/
+*.egg-info/
+
+# Local browser/session state
+.playwright/
+user-data-dir/
+*.log

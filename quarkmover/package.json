@@ -1,0 +1,7 @@
+{
+  "name": "quarkmover-browser-helper",
+  "private": true,
+  "dependencies": {
+    "playwright": "1.55.0"
+  }
+}
