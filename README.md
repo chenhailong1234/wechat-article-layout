@@ -78,6 +78,26 @@ decision = select_best_title(facts)
 print(decision.selected.title, decision.selected.score)
 ```
 
+### 复用夸克资料截图 Skill
+
+仓库内置 `capture-quark-resource-screenshots` Skill，显示名称为“夸克资料截图（无风险词控制版）”。它会优先生成一张内层目录图和两张真实内容图；资源无法预览时，改为生成两张不同的内层目录图，不使用分享根目录截图。
+
+在完整仓库中完成上述 Python、Node.js 和 Playwright 安装后，可直接运行：
+
+```powershell
+python skills/capture-quark-resource-screenshots/scripts/capture.py `
+  --url "https://pan.quark.cn/s/replace_me" `
+  --output "output/quark-screenshots"
+```
+
+也可以把 `skills/capture-quark-resource-screenshots` 安装到 Codex Skills 目录，然后这样调用：
+
+```text
+$capture-quark-resource-screenshots 请为这个夸克分享生成公众号素材截图：https://pan.quark.cn/s/replace_me
+```
+
+这个版本不执行风险词、品牌名、机构名或地区名过滤，也不声称已做 OCR 合规审核。它只负责截图与结果清单，不负责转存、下载、排版或发布。
+
 ### 创建草稿
 
 `scripts/wechat_api.py` 从环境变量 `WECHAT_API_KEY` 或项目根目录 `.env` 读取密钥。发布前请先查看帮助：
@@ -98,5 +118,5 @@ pytest -q
 
 - 仓库默认忽略所有 `.env`、生成文章、截图和发布结果。
 - 不要提交浏览器用户目录、Cookie、公众号凭据或真实网盘链接。
-- 建议保持 GitHub 仓库为私有，并定期轮换第三方 API Key。
+- 公开仓库只提交通用代码与测试，不提交密钥、Cookie、用户数据或真实业务素材，并定期轮换第三方 API Key。
 - 上传前可执行 `git diff --cached` 和密钥扫描，确认暂存内容符合预期。
