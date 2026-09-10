@@ -43,7 +43,11 @@ _SCREENSHOT_BLOCKED_TERMS = (
 )
 
 
-def _directory_entries_are_clean(entries: Sequence[Mapping[str, Any]]) -> bool:
+def _directory_entries_are_clean(
+    entries: Sequence[Mapping[str, Any]], *, filter_blocked_terms: bool = True
+) -> bool:
+    if not filter_blocked_terms:
+        return True
     return not any(
         term in str(entry.get("file_name") or "")
         for entry in entries for term in _SCREENSHOT_BLOCKED_TERMS
@@ -429,6 +433,7 @@ def capture_directory_screenshots(
     *,
     browser: ShareBrowser | None = None,
     browser_factory: Callable[[], ShareBrowser] = DrissionPageShareBrowser,
+    filter_blocked_terms: bool = True,
 ) -> tuple[Path, ...]:
     output_dir.mkdir(parents=True, exist_ok=True)
     owns_browser = browser is None
@@ -437,7 +442,13 @@ def capture_directory_screenshots(
         if active_browser is None:
             active_browser = browser_factory()
         active_browser.open_share(share_url)
-        route_fids = _resolve_public_directory_fids(share_url)
+        route_fids = (
+            _resolve_public_directory_fids(share_url)
+            if filter_blocked_terms
+            else _resolve_public_directory_fids(
+                share_url, filter_blocked_terms=False
+            )
+        )
         if route_fids and active_browser.__class__ is DrissionPageShareBrowser:
             _capture_with_playwright(share_url, output_dir, route_fids)
             return tuple(output_dir / f"directory-{index}.png" for index in (1, 2))
@@ -497,8 +508,16 @@ def capture_directory_screenshots(
 def capture_resource_screenshots(
     share_url: str,
     output_dir: Path,
+    *,
+    filter_blocked_terms: bool = True,
 ) -> ResourceScreenshotBundle:
-    route = _resolve_public_resource_route(share_url)
+    route = (
+        _resolve_public_resource_route(share_url)
+        if filter_blocked_terms
+        else _resolve_public_resource_route(
+            share_url, filter_blocked_terms=False
+        )
+    )
     if not route.fids:
         raise NoUsableScreenshot("share has no non-root directory")
     if len(route.preview_urls) < 2:
@@ -542,11 +561,17 @@ def capture_resource_screenshots(
     )
 
 
-def _resolve_public_directory_fids(share_url: str) -> tuple[str, ...]:
-    return _resolve_public_resource_route(share_url).fids
+def _resolve_public_directory_fids(
+    share_url: str, *, filter_blocked_terms: bool = True
+) -> tuple[str, ...]:
+    return _resolve_public_resource_route(
+        share_url, filter_blocked_terms=filter_blocked_terms
+    ).fids
 
 
-def _resolve_public_resource_route(share_url: str) -> PublicResourceRoute:
+def _resolve_public_resource_route(
+    share_url: str, *, filter_blocked_terms: bool = True
+) -> PublicResourceRoute:
     """Resolve a content-bearing inner folder and its real preview images."""
     try:
         match = re.fullmatch(
@@ -596,10 +621,15 @@ def _resolve_public_resource_route(share_url: str) -> PublicResourceRoute:
             while queue and checked < 80:
                 fid, current, depth = queue.pop(0)
                 checked += 1
-                previews = _entry_preview_urls(current)
-                if _directory_entries_are_clean(current) and len(previews) > len(best.preview_urls):
+                previews = _entry_preview_urls(
+                    current, filter_blocked_terms=filter_blocked_terms
+                )
+                clean = _directory_entries_are_clean(
+                    current, filter_blocked_terms=filter_blocked_terms
+                )
+                if clean and len(previews) > len(best.preview_urls):
                     best = PublicResourceRoute((fid,), previews[:8])
-                if len(previews) >= 2 and _directory_entries_are_clean(current):
+                if len(previews) >= 2 and clean:
                     return PublicResourceRoute((fid,), previews[:8])
                 if depth >= 7:
                     continue
@@ -618,14 +648,16 @@ def _resolve_public_resource_route(share_url: str) -> PublicResourceRoute:
         return PublicResourceRoute((), ())
 
 
-def _entry_preview_urls(entries: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
+def _entry_preview_urls(
+    entries: Sequence[Mapping[str, Any]], *, filter_blocked_terms: bool = True
+) -> tuple[str, ...]:
     urls: list[str] = []
     files = [
         entry for entry in entries
         if not entry.get("dir")
-        and not any(
+        and (not filter_blocked_terms or not any(
             term in str(entry.get("file_name") or "") for term in _SCREENSHOT_BLOCKED_TERMS
-        )
+        ))
     ]
     files.sort(
         key=lambda entry: entry.get("size")

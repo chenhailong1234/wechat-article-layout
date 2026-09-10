@@ -19,7 +19,11 @@ VALID_URL = "https://pan.quark.cn/s/Example123"
 
 def _png(path: Path, color: tuple[int, int, int]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    Image.new("RGB", (900, 600), color).save(path, format="PNG")
+    image = Image.new("RGB", (900, 600), "white")
+    for x in range(0, 900, 12):
+        for y in range(0, 600, 12):
+            image.putpixel((x, y), color)
+    image.save(path, format="PNG")
     return path
 
 
@@ -96,3 +100,18 @@ def test_rejects_duplicate_selected_images(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="distinct"):
         capture(VALID_URL, tmp_path, backend=DuplicateBackend())
+
+
+def test_rejects_blank_selected_images(tmp_path: Path) -> None:
+    class BlankBackend(FakeBackend):
+        def capture_content(self, _url: str, output: Path):
+            blank = output / "blank.png"
+            Image.new("RGB", (900, 600), "white").save(blank, format="PNG")
+            return {
+                "directory": _png(output / "directory-source.png", (90, 90, 90)),
+                "contents": (blank, _png(output / "usable.png", (20, 80, 160))),
+                "sources": ({"depth": 1}, {"depth": 1}, {"depth": 1}),
+            }
+
+    with pytest.raises(ValueError, match="blank"):
+        capture(VALID_URL, tmp_path, backend=BlankBackend())
