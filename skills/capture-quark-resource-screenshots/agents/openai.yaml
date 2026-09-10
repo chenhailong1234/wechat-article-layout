@@ -1,0 +1,8 @@
+interface:
+  display_name: "夸克资料截图（无风险词控制版）"
+  short_description: "截取真实资料内容，无法预览时回退为两张内层目录图"
+  brand_color: "#2AA198"
+  default_prompt: "Use $capture-quark-resource-screenshots to capture clear resource screenshots from this public Quark share."
+
+policy:
+  allow_implicit_invocation: true

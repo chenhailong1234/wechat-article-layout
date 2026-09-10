@@ -13,6 +13,12 @@ from typing import Any, Protocol
 from PIL import Image, ImageStat
 
 
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+_QUARKMOVER_SOURCE = _REPOSITORY_ROOT / "quarkmover"
+if _QUARKMOVER_SOURCE.is_dir():
+    sys.path.insert(0, str(_QUARKMOVER_SOURCE))
+
+
 _QUARK_SHARE = re.compile(r"https://pan\.quark\.cn/s/[A-Za-z0-9]+\Z")
 
 
