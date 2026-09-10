@@ -603,3 +603,18 @@ def test_content_selection_rejects_blank_preview_frames(tmp_path: Path) -> None:
 
     selected = _select_content_screenshots((blank, pattern_1, pattern_2))
     assert set(selected) == {pattern_1, pattern_2}
+
+
+def test_entry_preview_urls_can_disable_risk_word_filtering() -> None:
+    entries = [
+        {
+            "dir": False,
+            "file_name": "品牌名称版资料.pdf",
+            "size": 100,
+            "preview_url": "https://preview.test/brand",
+        }
+    ]
+
+    assert _entry_preview_urls(entries, filter_blocked_terms=False) == (
+        "https://preview.test/brand",
+    )
